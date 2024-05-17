@@ -14,6 +14,7 @@ type TransactionRepository interface {
 	GetTransactionById(transactionId int64) (model.Transaction, error)
 	GetTransactions(userId int64, categoryIds []int64, pagination SqlPagination) (PaginationResponse[model.Transaction], error)
 	DeleteTransaction(id int64) error
+	GetTotalPriceByDateAndCategory(userId int64, year int, month int, day int, categoryId int64) (float64, error)
 }
 
 type transactionRepository struct {
@@ -97,4 +98,38 @@ func (repo *transactionRepository) DeleteTransaction(id int64) error {
 	query := `DELETE FROM "Transactions" WHERE "Id" = $1`
 	_, err := repo.db.Exec(query, id)
 	return err
+}
+
+func (repo *transactionRepository) GetTotalPriceByDateAndCategory(userId int64, year int, month int, day int, categoryId int64) (float64, error) {
+	var totalPrice float64
+
+	counter := utils.IncreasingCounter{}
+	conditions := []string{
+		`"UserId" = $` + fmt.Sprintf("%d", counter.Next()),
+		`strftime('%Y', "CreatedAt") = $` + fmt.Sprintf("%d", counter.Next()),
+	}
+	args := []interface{}{userId, fmt.Sprintf("%04d", year)}
+
+	if categoryId != 0 {
+		conditions = append(conditions, `"CategoryId" = $`+fmt.Sprintf("%d", counter.Next()))
+		args = append(args, categoryId)
+	}
+
+	if month != 0 {
+		conditions = append(conditions, `strftime('%m', "CreatedAt") = $`+fmt.Sprintf("%d", counter.Next()))
+		args = append(args, fmt.Sprintf("%02d", month))
+		if day != 0 {
+			conditions = append(conditions, `strftime('%d', "CreatedAt") = $`+fmt.Sprintf("%d", counter.Next()))
+			args = append(args, fmt.Sprintf("%02d", day))
+		}
+	}
+
+	query := fmt.Sprintf(`SELECT COALESCE(SUM("Price"), 0) FROM "Transactions" WHERE %s`, strings.Join(conditions, " AND "))
+
+	err := repo.db.QueryRow(query, args...).Scan(&totalPrice)
+	if err != nil {
+		return 0, err
+	}
+
+	return totalPrice, nil
 }

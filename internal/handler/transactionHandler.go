@@ -26,6 +26,8 @@ func RegisterTransactionRoutes(router *gin.Engine, jwtService *jwt.JwtService, t
 	transactionRouterGroup.POST("", handler.create)
 	transactionRouterGroup.GET("", handler.get)
 	transactionRouterGroup.DELETE("", handler.deleteTransaction)
+
+	transactionRouterGroup.GET("/total", handler.getTotalPrice)
 }
 
 func (h *transactionHandler) create(c *gin.Context) {
@@ -140,4 +142,41 @@ func (h *transactionHandler) deleteTransaction(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "OK")
+}
+
+func (h *transactionHandler) getTotalPrice(c *gin.Context) {
+	userId, ok := auth.GetUserId(c)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	year, err := strconv.Atoi(c.Query("year"))
+	if err != nil || year == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid year parameter"})
+		return
+	}
+
+	month, err := strconv.Atoi(c.Query("month"))
+	if err != nil {
+		month = 0
+	}
+
+	day, err := strconv.Atoi(c.Query("day"))
+	if err != nil {
+		day = 0
+	}
+
+	categoryId, err := strconv.ParseInt(c.Query("categoryId"), 10, 64)
+	if err != nil {
+		categoryId = 0
+	}
+
+	totalPrice, err := h.transactionRepository.GetTotalPriceByDateAndCategory(userId, year, month, day, categoryId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get total price"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"totalPrice": totalPrice})
 }
