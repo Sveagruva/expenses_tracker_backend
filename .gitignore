@@ -1,0 +1,6 @@
+.env
+db.sqlite
+/new_migration
+/migrate
+/server
+
