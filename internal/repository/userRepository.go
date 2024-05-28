@@ -9,6 +9,7 @@ import (
 type UserRepository interface {
 	Create(user model.UserModel) error
 	FindByLogin(login string) (model.UserModel, error)
+	FindById(id int64) (model.UserModel, error)
 }
 
 type userRepository struct {
@@ -32,5 +33,12 @@ func (repo *userRepository) FindByLogin(login string) (model.UserModel, error) {
 	var user model.UserModel
 	query := `SELECT "Id", "Login", "PasswordHash" FROM "Users" WHERE "Login" = $1`
 	err := repo.db.QueryRow(query, login).Scan(&user.Id, &user.Login, &user.PasswordHash)
+	return user, err
+}
+
+func (repo *userRepository) FindById(id int64) (model.UserModel, error) {
+	var user model.UserModel
+	query := `SELECT "Id", "Login", "PasswordHash" FROM "Users" WHERE "Id" = $1`
+	err := repo.db.QueryRow(query, id).Scan(&user.Id, &user.Login, &user.PasswordHash)
 	return user, err
 }

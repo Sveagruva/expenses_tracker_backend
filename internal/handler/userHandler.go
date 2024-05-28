@@ -2,6 +2,7 @@ package handler
 
 import (
 	"expenses_tracker/internal/model"
+	"expenses_tracker/internal/pkg/auth"
 	"expenses_tracker/internal/pkg/jwt"
 	"expenses_tracker/internal/pkg/password"
 	"expenses_tracker/internal/repository"
@@ -26,6 +27,7 @@ func RegisterUserRoutes(router *gin.Engine, jwtService *jwt.JwtService, userRepo
 
 	userRouterGroup.POST("/register", handler.register)
 	userRouterGroup.GET("/login", handler.login)
+	userRouterGroup.GET("/", handler.get).Use(auth.GetAuthMiddleware(jwtService))
 }
 
 func (h *userHandler) register(c *gin.Context) {
@@ -83,4 +85,20 @@ func (h *userHandler) login(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
+
+func (h *userHandler) get(c *gin.Context) {
+	userId, ok := auth.GetUserId(c)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	user, err := h.userRepository.FindById(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
 }
