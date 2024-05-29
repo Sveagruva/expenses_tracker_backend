@@ -27,7 +27,7 @@ func RegisterUserRoutes(router *gin.Engine, jwtService *jwt.JwtService, userRepo
 
 	userRouterGroup.POST("/register", handler.register)
 	userRouterGroup.GET("/login", handler.login)
-	userRouterGroup.GET("/", handler.get).Use(auth.GetAuthMiddleware(jwtService))
+	userRouterGroup.Use(auth.GetAuthMiddleware(jwtService)).GET("/", handler.get)
 }
 
 func (h *userHandler) register(c *gin.Context) {
