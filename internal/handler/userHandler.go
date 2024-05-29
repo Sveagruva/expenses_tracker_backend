@@ -31,13 +31,18 @@ func RegisterUserRoutes(router *gin.Engine, jwtService *jwt.JwtService, userRepo
 }
 
 func (h *userHandler) register(c *gin.Context) {
-	var user model.UserModel
-	if err := c.BindJSON(&user); err != nil {
+	type RegisterInput struct {
+		Login    string `json:"login" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	var input RegisterInput
+	if err := c.BindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid user object"})
 		return
 	}
 
-	hashedPassword, err := password.HashPassword(user.PasswordHash)
+	hashedPassword, err := password.HashPassword(input.Password)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -45,8 +50,10 @@ func (h *userHandler) register(c *gin.Context) {
 		return
 	}
 
-	user.PasswordHash = hashedPassword
-	err = h.userRepository.Create(user)
+	err = h.userRepository.Create(model.UserModel{
+		PasswordHash: hashedPassword,
+		Login:        input.Login,
+	})
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -54,7 +61,7 @@ func (h *userHandler) register(c *gin.Context) {
 		return
 	}
 
-	log.Println("user", user)
+	log.Println("user", input)
 	c.JSON(200, gin.H{
 		"status": "ok",
 	})
