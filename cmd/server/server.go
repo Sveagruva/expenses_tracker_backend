@@ -24,7 +24,7 @@ func main() {
 	router := gin.Default()
 
 	handler.RegisterUserRoutes(router, jwtService, userRepo)
-	handler.RegisterTransactionRoutes(router, jwtService, transactionRepo)
+	handler.RegisterTransactionRoutes(router, jwtService, transactionRepo, transactionCategoryRepo)
 	handler.RegisterTransactionCategoryRoutes(router, jwtService, transactionCategoryRepo)
 
 	router.Run()

@@ -13,12 +13,14 @@ import (
 )
 
 type transactionHandler struct {
-	transactionRepository repository.TransactionRepository
+	transactionRepository         repository.TransactionRepository
+	transactionCategoryRepository repository.TransactionCategoryRepository
 }
 
-func RegisterTransactionRoutes(router *gin.Engine, jwtService *jwt.JwtService, transactionRepositor repository.TransactionRepository) {
+func RegisterTransactionRoutes(router *gin.Engine, jwtService *jwt.JwtService, transactionRepository repository.TransactionRepository, transactionCategoryRepository repository.TransactionCategoryRepository) {
 	handler := transactionHandler{
-		transactionRepository: transactionRepositor,
+		transactionRepository:         transactionRepository,
+		transactionCategoryRepository: transactionCategoryRepository,
 	}
 
 	transactionRouterGroup := router.Group("/transaction").Use(auth.GetAuthMiddleware(jwtService))
@@ -43,8 +45,14 @@ func (h *transactionHandler) create(c *gin.Context) {
 		return
 	}
 
+	category, err := h.transactionCategoryRepository.GetTransactionCategoryById(transaction.CategoryId)
+	if err != nil || category.UserId != userId {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
 	transaction.UserId = userId
-	err := h.transactionRepository.CreateTransaction(transaction)
+	err = h.transactionRepository.CreateTransaction(transaction)
 
 	if err != nil {
 		c.JSON(400, gin.H{
