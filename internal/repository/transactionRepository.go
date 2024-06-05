@@ -74,7 +74,7 @@ func (repo *transactionRepository) GetTransactions(userId int64, categoryIds []i
 		return PaginationResponse[model.Transaction]{Items: transactions, Count: 0}, err
 	}
 
-	mainQuery += " ORDER BY \"Transactions\".\"CreatedAt\" LIMIT $" + strconv.Itoa(counter.Next()) + " OFFSET $" + strconv.Itoa(counter.Next())
+	mainQuery += " ORDER BY \"Transactions\".\"CreatedAt\" DESC LIMIT $" + strconv.Itoa(counter.Next()) + " OFFSET $" + strconv.Itoa(counter.Next())
 	queryParams = append(queryParams, pagination.Limit, pagination.Offset)
 
 	rows, err := repo.db.Query(mainQuery, queryParams...)
