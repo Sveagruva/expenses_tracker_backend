@@ -35,7 +35,7 @@ func (repo *transactionCategoryRepository) GetTransactionCategoryById(categoryId
 }
 
 func (repo *transactionCategoryRepository) GetTransactionCategories(userId int64) ([]model.TransactionCategory, error) {
-	var categories []model.TransactionCategory
+	var categories []model.TransactionCategory = []model.TransactionCategory{}
 	query := `SELECT "Id", "UserId", "Name", "Color" FROM "TransactionCategories" WHERE "UserId" = $1`
 	rows, err := repo.db.Query(query, userId)
 	if err != nil {
