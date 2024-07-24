@@ -27,6 +27,7 @@ func RegisterTransactionRoutes(router *gin.Engine, jwtService *jwt.JwtService, t
 
 	transactionRouterGroup.POST("", handler.create)
 	transactionRouterGroup.GET("", handler.get)
+	transactionRouterGroup.PUT("", handler.deleteTransaction)
 	transactionRouterGroup.DELETE("", handler.deleteTransaction)
 
 	transactionRouterGroup.GET("/total", handler.getTotalPrice)
@@ -118,6 +119,41 @@ func (h *transactionHandler) get(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, transactions)
+}
+
+func (h *transactionHandler) update(c *gin.Context) {
+	userId, ok := auth.GetUserId(c)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	type UpdateTransactionInput struct {
+		TransactionId int64 `json:"id" binding:"required"`
+		Price         int64 `json:"price" binding:"required"`
+	}
+
+	var input UpdateTransactionInput
+	if err := c.BindJSON(&input); err != nil || input.TransactionId == 0 || input.Price == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input object"})
+		return
+	}
+
+	transaction, err := h.transactionRepository.GetTransactionById(input.TransactionId)
+	if err != nil || transaction.UserId != userId {
+		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+		return
+	}
+
+	transaction.Price = input.Price
+
+	err = h.transactionRepository.UpdateTransaction(transaction)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update"})
+		return
+	}
+
+	c.String(http.StatusOK, "OK")
 }
 
 func (h *transactionHandler) deleteTransaction(c *gin.Context) {

@@ -13,6 +13,7 @@ type TransactionRepository interface {
 	CreateTransaction(transaction model.Transaction) error
 	GetTransactionById(transactionId int64) (model.Transaction, error)
 	GetTransactions(userId int64, categoryIds []int64, pagination SqlPagination) (PaginationResponse[model.Transaction], error)
+	UpdateTransaction(transaction model.Transaction) error
 	DeleteTransaction(id int64) error
 	GetTotalPriceByDateAndCategory(userId int64, year int, month int, day int, categoryId int64) (float64, error)
 }
@@ -97,6 +98,12 @@ func (repo *transactionRepository) GetTransactions(userId int64, categoryIds []i
 func (repo *transactionRepository) DeleteTransaction(id int64) error {
 	query := `DELETE FROM "Transactions" WHERE "Id" = $1`
 	_, err := repo.db.Exec(query, id)
+	return err
+}
+
+func (repo *transactionRepository) UpdateTransaction(transaction model.Transaction) error {
+	query := `UPDATE "Transactions" SET "Price" = $1 WHERE "Id" = $2`
+	_, err := repo.db.Exec(query, transaction.Price, transaction.Id)
 	return err
 }
 
