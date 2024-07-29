@@ -27,7 +27,7 @@ func RegisterTransactionRoutes(router *gin.Engine, jwtService *jwt.JwtService, t
 
 	transactionRouterGroup.POST("", handler.create)
 	transactionRouterGroup.GET("", handler.get)
-	transactionRouterGroup.PUT("", handler.deleteTransaction)
+	transactionRouterGroup.PUT("", handler.update)
 	transactionRouterGroup.DELETE("", handler.deleteTransaction)
 
 	transactionRouterGroup.GET("/total", handler.getTotalPrice)
